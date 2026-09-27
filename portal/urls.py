@@ -12,6 +12,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from judging import api as judging_api
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
@@ -19,7 +21,13 @@ urlpatterns = [
     path('auth/', include('accounts.urls', namespace='accounts')),
     path('teams/', include('teams.urls', namespace='teams')),
     path('submissions/', include('submissions.urls', namespace='submissions')),
+    path('judging/', include('judging.urls', namespace='judging')),
     path('', include('events.urls', namespace='events')),
+
+    # Spec-Specific Judging API Routes
+    path('api/events/<int:event_id>/my-assignments/', judging_api.MyAssignmentsAPIView.as_view(), name='api_my_assignments'),
+    path('api/submissions/<int:submission_id>/scores/', judging_api.SubmissionScoresAPIView.as_view(), name='api_submission_scores'),
+    path('api/events/<int:event_id>/judge-progress/', judging_api.JudgeProgressAPIView.as_view(), name='api_judge_progress'),
 
     # OpenAPI Schema & Interactive Docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

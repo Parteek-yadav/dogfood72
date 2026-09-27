@@ -1,0 +1,3 @@
+"""
+Judging services initialization.
+"""

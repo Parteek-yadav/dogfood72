@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}My Judging Assignments{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-5xl mx-auto">
+  <div class="border-b border-slate-800 pb-6">
+    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">Judge Portal</span>
+    <h1 class="text-3xl font-extrabold text-white mt-1">My Assigned Submissions</h1>
+    <p class="text-xs text-slate-400 mt-1">Evaluate projects allocated to you across active hackathons. You may update scores until the event judging window closes.</p>
+  </div>
+
+  {% if assignments %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {% for a in assignments %}
+        <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6 flex flex-col justify-between hover:border-indigo-500/40 transition">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-indigo-400 font-semibold">{{ a.event.name }}</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full font-medium {% if a.status == 'completed' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% elif a.status == 'in_progress' %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% else %}bg-slate-800 text-slate-400{% endif %}">
+                {{ a.get_status_display }}
+              </span>
+            </div>
+
+            <h2 class="text-xl font-bold text-white">{{ a.submission.title }}</h2>
+            <p class="text-xs text-slate-400 mt-1">Team: <strong class="text-slate-200">{{ a.submission.team.name }}</strong></p>
+            {% if a.submission.tagline %}
+              <p class="text-xs text-slate-300 mt-2 line-clamp-2">{{ a.submission.tagline }}</p>
+            {% endif %}
+
+            {% if a.submission.track %}
+              <span class="inline-block mt-3 text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                Track: {{ a.submission.track.name }}
+              </span>
+            {% endif %}
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+            <span class="text-xs text-slate-500">
+              {% if a.completed_at %}Scored {{ a.completed_at|date:"M d, H:i" }}{% else %}Awaiting Evaluation{% endif %}
+            </span>
+            <a href="{% url 'judging:score_submission' assignment_id=a.id %}" class="px-4 py-2 rounded-xl {% if a.status == 'completed' %}bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700{% else %}bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md shadow-indigo-600/30{% endif %} text-xs transition">
+              {% if a.status == 'completed' %}Review / Update Scores{% else %}Start Evaluation →{% endif %}
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="rounded-2xl border border-dashed border-slate-800 p-16 text-center">
+      <span class="text-4xl block mb-2">⚖️</span>
+      <p class="text-slate-400 font-medium">No submissions currently assigned to you.</p>
+      <p class="text-xs text-slate-500 mt-1">When an event organizer runs the algorithmic assignment, your allocated projects will appear here.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

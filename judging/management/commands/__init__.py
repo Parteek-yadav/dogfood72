@@ -1,0 +1,1 @@
+"""Judging management commands package."""
