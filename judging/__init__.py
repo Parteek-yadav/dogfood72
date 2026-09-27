@@ -1,0 +1,1 @@
+"""Judging app initialization."""

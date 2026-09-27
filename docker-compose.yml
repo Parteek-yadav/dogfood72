@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: dogfood_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dogfood}
+      POSTGRES_USER: ${POSTGRES_USER:-dogfood_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dogfood_pass}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dogfood_user} -d ${POSTGRES_DB:-dogfood}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dogfood_web
+    volumes:
+      - .:/app
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      DEBUG: ${DEBUG:-1}
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-dogfood2026-hackathon-platform-dev-key}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,web}
+      POSTGRES_DB: ${POSTGRES_DB:-dogfood}
+      POSTGRES_USER: ${POSTGRES_USER:-dogfood_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dogfood_pass}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
