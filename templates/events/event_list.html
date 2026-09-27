@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Events Directory{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Hero Section -->
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-950 border border-indigo-900/40 p-8 sm:p-12 shadow-2xl">
+    <div class="relative z-10 max-w-2xl">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-4">
+        ⚡ 72-Hour Hackathon Arena
+      </span>
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+        Build, Ship, and Judge at the Speed of Light.
+      </h1>
+      <p class="mt-4 text-slate-300 text-base sm:text-lg leading-relaxed">
+        Discover open events, form teams via secure invite links, submit your work, and explore community submissions.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        {% if user.is_authenticated %}
+          <a href="{% url 'events:event_create' %}" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition shadow-lg shadow-indigo-600/30">
+            + Host an Event
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:signup' %}" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition shadow-lg shadow-indigo-600/30">
+            Get Started
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Events Grid -->
+  <div>
+    <h2 class="text-xl font-bold tracking-tight text-white mb-4">Active & Upcoming Events</h2>
+    {% if events %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for event in events %}
+          <div class="flex flex-col justify-between rounded-2xl bg-slate-900 border border-slate-800 p-6 hover:border-indigo-500/50 transition group">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                {% if event.is_published %}
+                  <span class="text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Live
+                  </span>
+                {% else %}
+                  <span class="text-xs px-2.5 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    Draft / Unpublished
+                  </span>
+                {% endif %}
+                <span class="text-xs text-slate-400">By @{{ event.organizer.username }}</span>
+              </div>
+              <h3 class="text-xl font-bold text-white group-hover:text-indigo-400 transition">
+                <a href="{% url 'events:event_detail' slug=event.slug %}">{{ event.name }}</a>
+              </h3>
+              <p class="text-sm text-slate-400 mt-2 line-clamp-3">
+                {{ event.description }}
+              </p>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+              <div class="flex justify-between">
+                <span>Deadline:</span>
+                <span class="font-medium text-slate-200">{{ event.submission_deadline|date:"M d, Y H:i" }} UTC</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Tracks:</span>
+                <span class="font-medium text-slate-200">{{ event.tracks.count }}</span>
+              </div>
+              <div class="pt-2 flex items-center justify-between">
+                <a href="{% url 'submissions:public_gallery' slug=event.slug %}" class="text-indigo-400 hover:text-indigo-300 font-medium">
+                  View Gallery →
+                </a>
+                <a href="{% url 'events:event_detail' slug=event.slug %}" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+                  Details
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="rounded-2xl border border-dashed border-slate-800 p-12 text-center">
+        <p class="text-slate-400">No events found yet.</p>
+        {% if user.is_authenticated %}
+          <a href="{% url 'events:event_create' %}" class="mt-3 inline-block text-indigo-400 hover:underline text-sm font-medium">Create the first event</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

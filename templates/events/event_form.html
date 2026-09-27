@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">{{ title }}</h1>
+    <p class="text-sm text-slate-400 mt-1">Configure dates, timeline milestones, and publication visibility.</p>
+  </div>
+
+  <form method="POST" class="space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-sm">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Event Name</label>
+      {{ form.name }}
+      {% if form.name.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">URL Slug</label>
+      {{ form.slug }}
+      {% if form.slug.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.slug.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.description.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Start Date & Time</label>
+        {{ form.start_date }}
+        {% if form.start_date.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.start_date.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">End Date & Time</label>
+        {{ form.end_date }}
+        {% if form.end_date.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.end_date.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-rose-300 mb-1">Submission Deadline (Strict)</label>
+      {{ form.submission_deadline }}
+      {% if form.submission_deadline.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.submission_deadline.errors.0 }}</p>{% endif %}
+      <p class="text-[11px] text-slate-400 mt-1">Edits are automatically rejected after this exact timestamp.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Voting Start</label>
+        {{ form.voting_start }}
+        {% if form.voting_start.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.voting_start.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Voting End</label>
+        {{ form.voting_end }}
+        {% if form.voting_end.errors %}<p class="text-xs text-rose-400 mt-1">{{ form.voting_end.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3 pt-2">
+      {{ form.is_published }}
+      <label class="text-sm font-medium text-slate-200">Publish immediately (visible in public directory)</label>
+    </div>
+
+    <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+      <a href="{% if event %}{% url 'events:event_detail' slug=event.slug %}{% else %}{% url 'events:event_list' %}{% endif %}" class="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition text-sm font-medium">
+        Cancel
+      </a>
+      <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-semibold text-white transition shadow-lg shadow-indigo-600/30 text-sm">
+        Save Event
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

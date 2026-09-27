@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dogfood 2026{% endblock %} | Hackathon Platform</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="flex flex-col min-h-screen font-sans selection:bg-indigo-500 selection:text-white antialiased">
+
+  <!-- Navbar -->
+  <header class="sticky top-0 z-40 w-full backdrop-blur border-b border-slate-800 bg-slate-950/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-6">
+        <a href="{% url 'events:event_list' %}" class="flex items-center space-x-2 font-bold text-xl tracking-tight text-white hover:text-indigo-400 transition">
+          <span class="inline-block w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-400 flex items-center justify-center shadow-lg shadow-indigo-500/30">🐕</span>
+          <span>Dogfood <span class="text-indigo-400">2026</span></span>
+        </a>
+        <nav class="hidden md:flex items-center space-x-4 text-sm font-medium text-slate-300">
+          <a href="{% url 'events:event_list' %}" class="hover:text-white transition">Events</a>
+          {% if user.is_authenticated %}
+            <a href="{% url 'events:event_create' %}" class="hover:text-white transition">+ Create Event</a>
+          {% endif %}
+          <a href="/api/docs/" target="_blank" class="hover:text-white transition text-xs font-mono px-2 py-1 rounded bg-slate-800 border border-slate-700">API Docs ↗</a>
+        </nav>
+      </div>
+
+      <!-- Auth State Actions -->
+      <div class="flex items-center space-x-3 text-sm">
+        {% if user.is_authenticated %}
+          <span class="text-slate-400 hidden sm:inline">Signed in as <span class="font-semibold text-slate-200">@{{ user.username }}</span></span>
+          {% if user.is_staff %}
+            <a href="/admin/" target="_blank" class="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-1 rounded font-medium">Admin</a>
+          {% endif %}
+          <a href="{% url 'accounts:logout' %}" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 transition">Sign Out</a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="px-3.5 py-1.5 rounded-lg text-slate-300 hover:text-white transition">Sign In</a>
+          <a href="{% url 'accounts:signup' %}" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Messages Banner -->
+  {% if messages %}
+    <div class="max-w-4xl mx-auto px-4 mt-4 w-full space-y-2">
+      {% for message in messages %}
+        <div class="p-4 rounded-xl border flex items-center justify-between text-sm {% if message.tags == 'error' %}bg-rose-950/50 border-rose-800 text-rose-200{% elif message.tags == 'success' %}bg-emerald-950/50 border-emerald-800 text-emerald-200{% else %}bg-indigo-950/50 border-indigo-800 text-indigo-200{% endif %}">
+          <span>{{ message }}</span>
+          <button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100 font-bold ml-4">✕</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>Dogfood 2026 Hackathon Submission & Judging Platform &bull; 72-Hour Sprint</p>
+      <div class="flex items-center space-x-4">
+        <a href="/api/schema/" class="hover:text-slate-400">OpenAPI Spec</a>
+        <a href="/api/docs/" class="hover:text-slate-400">Swagger UI</a>
+        <a href="/admin/" class="hover:text-slate-400">Django Admin</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

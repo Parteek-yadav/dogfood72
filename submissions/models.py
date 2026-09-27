@@ -86,6 +86,9 @@ class Submission(models.Model):
         verbose_name = "Submission"
         verbose_name_plural = "Submissions"
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['team', 'event'], name='unique_team_event_submission'),
+        ]
         indexes = [
             models.Index(fields=['event', 'status']),
             models.Index(fields=['team', 'event']),
@@ -98,6 +101,19 @@ class Submission(models.Model):
 
     def clean(self):
         super().clean()
+        # Enforce submission deadline for updates
+        if self.pk and self.event_id and self.event.submission_deadline:
+            if timezone.now() > self.event.submission_deadline:
+                from core.models import AuditLogEntry
+                actor = getattr(self, '_current_user', None)
+                AuditLogEntry.log(
+                    action='submission.deadline_blocked_edit_attempt',
+                    target=self,
+                    actor=actor,
+                    metadata={'event_id': self.event_id, 'deadline': self.event.submission_deadline.isoformat()}
+                )
+                raise ValidationError("The submission deadline for this event has passed. Edits are closed.")
+
         # Ensure team belongs to the selected event
         if self.team_id and self.event_id and self.team.event_id != self.event_id:
             raise ValidationError({'team': "The selected team must belong to the specified event."})
@@ -154,9 +170,21 @@ class Submission(models.Model):
                         errors[q_id_str] = f"Answer to '{question.label}' must be a valid HTTP/HTTPS URL."
 
         if errors:
-            raise ValidationError({'custom_answers': errors})
+            raise ValidationError({'custom_answers': [msg for msg in errors.values()]})
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, actor=None, **kwargs):
+        is_new = self.pk is None
+        was_draft = False
+        if not is_new:
+            try:
+                prev = Submission.objects.get(pk=self.pk)
+                was_draft = (prev.status == self.Status.DRAFT)
+            except Submission.DoesNotExist:
+                pass
+
+        if actor is not None:
+            self._current_user = actor
+
         # Automatically timestamp submission
         if self.status == self.Status.SUBMITTED and not self.submitted_at:
             self.submitted_at = timezone.now()
@@ -165,8 +193,19 @@ class Submission(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+        # Audit logging
+        from core.models import AuditLogEntry
+        actor_user = getattr(self, '_current_user', None)
+        if is_new:
+            AuditLogEntry.log('submission.created', self, actor=actor_user)
+        else:
+            AuditLogEntry.log('submission.edited', self, actor=actor_user)
+
+        if self.status == self.Status.SUBMITTED and was_draft:
+            AuditLogEntry.log('submission.submitted', self, actor=actor_user)
+
         # Snapshot version for audit history
-        self.create_version_snapshot()
+        self.create_version_snapshot(actor=actor_user)
 
     def create_version_snapshot(self, actor=None):
         """Creates an immutable snapshot of this submission in SubmissionVersion."""

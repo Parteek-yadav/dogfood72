@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Invitation Error{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-12 bg-slate-900 border border-rose-900/40 rounded-2xl p-8 shadow-xl text-center">
+  <div class="w-12 h-12 mx-auto rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-xl mb-4">
+    ⚠️
+  </div>
+  <h1 class="text-xl font-bold text-white">Unable to Join Team</h1>
+  <p class="text-sm text-rose-300 mt-2 bg-rose-950/40 border border-rose-800 p-3 rounded-xl text-left">
+    {{ error }}
+  </p>
+
+  <div class="mt-6 flex flex-col gap-2">
+    {% if team %}
+      <a href="{% url 'events:event_detail' slug=team.event.slug %}" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition">
+        Return to {{ team.event.name }}
+      </a>
+    {% endif %}
+    <a href="{% url 'events:event_list' %}" class="text-xs text-slate-400 hover:underline mt-2">
+      Browse other events
+    </a>
+  </div>
+</div>
+{% endblock %}

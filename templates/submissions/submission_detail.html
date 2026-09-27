@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ submission.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-8">
+  <!-- Submission Header -->
+  <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+      <div class="space-y-3 max-w-3xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <a href="{% url 'events:event_detail' slug=event.slug %}" class="text-xs font-semibold text-indigo-400 hover:underline">
+            {{ event.name }}
+          </a>
+          {% if submission.track %}
+            <span class="text-xs text-slate-500">&bull;</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+              Track: {{ submission.track.name }}
+            </span>
+          {% endif %}
+          <span class="text-xs px-2.5 py-0.5 rounded-full font-medium {% if submission.status == 'submitted' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
+            {{ submission.get_status_display }}
+          </span>
+        </div>
+
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">{{ submission.title }}</h1>
+        {% if submission.tagline %}
+          <p class="text-lg text-slate-300 font-medium">{{ submission.tagline }}</p>
+        {% endif %}
+        <p class="text-xs text-slate-400">
+          Built by Team <strong class="text-slate-200">{{ submission.team.name }}</strong>
+          {% if submission.submitted_at %} &bull; Submitted on {{ submission.submitted_at|date:"M d, Y H:i" }} UTC{% endif %}
+        </p>
+
+        <!-- Tech Tags -->
+        {% if submission.tech_tags %}
+          <div class="flex flex-wrap gap-1.5 pt-2">
+            {% for tag in submission.tech_tags %}
+              <span class="text-xs px-2.5 py-1 rounded-lg bg-indigo-950/60 border border-indigo-800/60 text-indigo-300 font-mono">
+                #{{ tag }}
+              </span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Links & Team Edit -->
+      <div class="flex flex-col gap-2.5 shrink-0">
+        {% if submission.live_url %}
+          <a href="{{ submission.live_url }}" target="_blank" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-center text-sm transition shadow-lg shadow-indigo-600/30">
+            🚀 Open Live App ↗
+          </a>
+        {% endif %}
+        {% if submission.repo_url %}
+          <a href="{{ submission.repo_url }}" target="_blank" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-center text-xs font-medium transition">
+            View Source Code ↗
+          </a>
+        {% endif %}
+        {% if submission.demo_video_url %}
+          <a href="{{ submission.demo_video_url }}" target="_blank" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-center text-xs font-medium transition">
+            Watch Demo Video ↗
+          </a>
+        {% endif %}
+        {% if is_team_member %}
+          <a href="{% url 'submissions:submission_edit' pk=submission.pk %}" class="mt-2 px-4 py-2 rounded-xl border border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/40 text-center text-xs font-medium transition">
+            ✏️ Edit Submission
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Gallery Carousel / Grid -->
+  {% if gallery_images %}
+    <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 space-y-4">
+      <h2 class="text-xl font-bold text-white flex items-center gap-2">
+        <span>🖼️</span> Project Screenshots & Gallery
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for img in gallery_images %}
+          <div class="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 group">
+            <a href="{{ img.image.url }}" target="_blank">
+              <img src="{{ img.image.url }}" alt="{{ img.caption }}" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
+            </a>
+            {% if img.caption %}
+              <div class="p-2.5 text-xs text-slate-300 bg-slate-900 border-t border-slate-800">
+                {{ img.caption }}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Main Description Writeup -->
+  <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 space-y-6">
+    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+      <span>📖</span> Project Story
+    </h2>
+    <div class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+      {{ submission.description }}
+    </div>
+  </div>
+
+  <!-- Custom Questions Responses -->
+  {% if answered_questions %}
+    <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 space-y-4">
+      <h2 class="text-xl font-bold text-white flex items-center gap-2">
+        <span>📋</span> Custom Questionnaire Answers
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        {% for item in answered_questions %}
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800/80">
+            <span class="text-slate-400 block font-semibold mb-1">{{ item.label }}</span>
+            {% if item.field_type == 'url' %}
+              <a href="{{ item.value }}" target="_blank" class="text-indigo-400 hover:underline break-all">{{ item.value }}</a>
+            {% elif item.field_type == 'checkbox' %}
+              <span class="font-medium text-slate-200">{% if item.value %}Yes{% else %}No{% endif %}</span>
+            {% else %}
+              <span class="text-slate-200 whitespace-pre-line">{{ item.value }}</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Event Header -->
+  <div class="rounded-2xl bg-slate-900 border border-slate-800 p-8 shadow-xl">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs px-2.5 py-0.5 rounded-full font-medium {% if event.is_published %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
+            {% if event.is_published %}Published{% else %}Draft{% endif %}
+          </span>
+          <span class="text-xs text-slate-400">Organized by @{{ event.organizer.username }}</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white">{{ event.name }}</h1>
+        <p class="text-slate-300 mt-3 max-w-3xl whitespace-pre-line">{{ event.description }}</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
+        {% if is_organizer %}
+          <a href="{% url 'events:event_manage' slug=event.slug %}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium text-center transition">
+            ⚙️ Organizer Dashboard
+          </a>
+        {% endif %}
+
+        {% if user_team %}
+          <a href="{% url 'teams:team_detail' pk=user_team.pk %}" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-center transition shadow-lg shadow-indigo-600/30">
+            My Team: {{ user_team.name }}
+          </a>
+        {% else %}
+          {% if user.is_authenticated %}
+            <a href="{% url 'teams:team_create' event_slug=event.slug %}" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-center transition shadow-lg shadow-indigo-600/30">
+              + Form a Team
+            </a>
+          {% else %}
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-center transition shadow-lg shadow-indigo-600/30">
+              Sign In to Participate
+            </a>
+          {% endif %}
+        {% endif %}
+
+        <a href="{% url 'submissions:public_gallery' slug=event.slug %}" class="px-4 py-2 rounded-xl border border-slate-800 hover:bg-slate-800/60 text-slate-300 font-medium text-center transition">
+          View Projects Gallery →
+        </a>
+      </div>
+    </div>
+
+    <!-- Timeline Banner -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-800 text-xs">
+      <div>
+        <span class="text-slate-400 block">Starts:</span>
+        <span class="font-semibold text-slate-200 text-sm">{{ event.start_date|date:"M d, Y H:i" }} UTC</span>
+      </div>
+      <div>
+        <span class="text-slate-400 block">Submission Deadline:</span>
+        <span class="font-semibold text-rose-300 text-sm">{{ event.submission_deadline|date:"M d, Y H:i" }} UTC</span>
+      </div>
+      <div>
+        <span class="text-slate-400 block">Voting Window:</span>
+        <span class="font-semibold text-slate-200 text-sm">{{ event.voting_start|date:"M d" }} - {{ event.voting_end|date:"M d, Y" }}</span>
+      </div>
+      <div>
+        <span class="text-slate-400 block">Concludes:</span>
+        <span class="font-semibold text-slate-200 text-sm">{{ event.end_date|date:"M d, Y" }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracks & Prizes Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Tracks -->
+    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <span>🎯</span> Tracks & Categories
+      </h2>
+      {% if tracks %}
+        <div class="space-y-3">
+          {% for track in tracks %}
+            <div class="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80">
+              <h3 class="font-semibold text-white">{{ track.name }}</h3>
+              {% if track.description %}
+                <p class="text-xs text-slate-400 mt-1">{{ track.description }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-slate-500">No tracks specified for this event.</p>
+      {% endif %}
+    </div>
+
+    <!-- Prizes -->
+    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <span>🏆</span> Prizes
+      </h2>
+      {% if prizes %}
+        <div class="space-y-3">
+          {% for prize in prizes %}
+            <div class="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80 flex items-start justify-between">
+              <div>
+                <span class="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">Rank #{{ prize.rank }}</span>
+                <h3 class="font-semibold text-white mt-1">{{ prize.name }}</h3>
+                {% if prize.track %}
+                  <span class="text-xs text-indigo-400">Track: {{ prize.track.name }}</span>
+                {% endif %}
+                {% if prize.description %}
+                  <p class="text-xs text-slate-400 mt-1">{{ prize.description }}</p>
+                {% endif %}
+              </div>
+              {% if prize.amount %}
+                <span class="text-base font-bold text-emerald-400 shrink-0 ml-4">{{ prize.amount }}</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-slate-500">No prizes listed.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Custom Questions Preview -->
+  {% if questions %}
+    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <span>📋</span> Required Submission Information
+      </h2>
+      <p class="text-xs text-slate-400 mb-4">Teams submitting projects will be asked to answer these questions:</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+        {% for q in questions %}
+          <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="font-medium text-slate-200 block">{{ q.label }} {% if q.required %}<span class="text-rose-400 font-bold">*</span>{% endif %}</span>
+            <span class="text-slate-500 text-[10px] mt-1 block capitalize">Type: {{ q.get_field_type_display }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

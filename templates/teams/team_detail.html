@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Team {{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-4xl mx-auto">
+  <!-- Team Header -->
+  <div class="rounded-2xl bg-slate-900 border border-slate-800 p-8 shadow-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <a href="{% url 'events:event_detail' slug=team.event.slug %}" class="text-xs font-semibold text-indigo-400 hover:underline">
+          ← {{ team.event.name }}
+        </a>
+        <h1 class="text-3xl font-extrabold text-white mt-1">{{ team.name }}</h1>
+        <p class="text-xs text-slate-400 mt-1">Formed on {{ team.created_at|date:"M d, Y" }} by @{{ team.created_by.username }}</p>
+      </div>
+
+      <!-- Submission Status Indicator & Actions -->
+      <div class="flex items-center gap-3">
+        {% if submission %}
+          <div class="text-right">
+            <span class="text-xs font-mono px-2.5 py-1 rounded-full font-medium {% if submission.status == 'submitted' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
+              {{ submission.get_status_display }}
+            </span>
+            <div class="mt-2 flex gap-2">
+              <a href="{% url 'submissions:submission_detail' pk=submission.pk %}" class="text-xs px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200">
+                View Project
+              </a>
+              {% if user_is_member %}
+                <a href="{% url 'submissions:submission_edit' pk=submission.pk %}" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30">
+                  Edit Submission
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          {% if user_is_member %}
+            <a href="{% url 'submissions:submission_create' team_id=team.pk %}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30">
+              🚀 Start Project Submission
+            </a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Team Roster -->
+    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+      <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <span>👥</span> Team Roster ({{ memberships.count }})
+      </h2>
+      <div class="divide-y divide-slate-800">
+        {% for m in memberships %}
+          <div class="py-3 flex items-center justify-between text-sm">
+            <div>
+              <span class="font-medium text-slate-200">@{{ m.user.username }}</span>
+              {% if m.user.email %}<span class="text-xs text-slate-500 block">{{ m.user.email }}</span>{% endif %}
+            </div>
+            <span class="text-xs px-2.5 py-0.5 rounded-full font-medium {% if m.role == 'leader' %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% else %}bg-slate-800 text-slate-400{% endif %}">
+              {{ m.get_role_display }}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Invites Section -->
+    <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6">
+      <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <span>✉️</span> Teammate Invites
+      </h2>
+
+      {% if user_is_member %}
+        <!-- Active Invites List -->
+        {% if active_invites %}
+          <div class="space-y-3 mb-6">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Shareable Links</h3>
+            {% for inv in active_invites %}
+              <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400">Expires: <strong class="text-slate-200">{{ inv.expires_at|date:"M d, H:i" }}</strong></span>
+                  {% if inv.email %}<span class="text-indigo-400 font-mono">Gated to {{ inv.email }}</span>{% else %}<span class="text-emerald-400">Public Link</span>{% endif %}
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{% url 'teams:team_join' token=inv.token %}" class="w-full bg-slate-900 border border-slate-700 px-2 py-1 rounded font-mono text-[11px] text-slate-300 select-all">
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Generate Invite Form -->
+        <form method="POST" action="{% url 'teams:team_invite_create' pk=team.pk %}" class="space-y-3 pt-4 border-t border-slate-800 text-xs">
+          {% csrf_token %}
+          <h3 class="font-semibold text-slate-200">+ Generate New Invite Link</h3>
+          {{ invite_form.email }}
+          <div class="flex items-center gap-2">
+            <label class="text-slate-400">Expires in (days):</label>
+            {{ invite_form.expires_in_days }}
+          </div>
+          <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold rounded-lg transition">
+            Generate Invite
+          </button>
+        </form>
+      {% else %}
+        <p class="text-xs text-slate-500">Only team members can view and generate team invites.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

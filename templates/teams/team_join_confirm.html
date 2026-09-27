@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Join Team {{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-12 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl text-center">
+  <div class="w-12 h-12 mx-auto rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl mb-4">
+    🤝
+  </div>
+  <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">{{ event.name }}</span>
+  <h1 class="text-2xl font-bold text-white mt-1">Join Team {{ team.name }}</h1>
+  <p class="text-sm text-slate-400 mt-2">
+    You have been invited by @{{ invite.created_by.username }} to collaborate as a team member.
+  </p>
+
+  <form method="POST" class="mt-6">
+    {% csrf_token %}
+    <button type="submit" class="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-semibold text-white transition shadow-lg shadow-indigo-600/30 text-sm">
+      Accept Invitation & Join Team
+    </button>
+  </form>
+
+  <a href="{% url 'events:event_detail' slug=event.slug %}" class="inline-block mt-4 text-xs text-slate-400 hover:underline">
+    Decline and return to event
+  </a>
+</div>
+{% endblock %}

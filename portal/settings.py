@@ -89,26 +89,49 @@ WSGI_APPLICATION = 'portal.wsgi.application'
 ASGI_APPLICATION = 'portal.asgi.application'
 
 # Database
-# Connects to PostgreSQL using psycopg 3 by default, or SQLite if USE_SQLITE is enabled
+# In Docker, connects to Postgres ('db'). For local tests or fallback if host is unresolvable, uses SQLite.
+import socket
+import sys
 
-if os.environ.get('USE_SQLITE', '0').lower() in ('1', 'true', 'yes'):
+is_testing = 'test' in sys.argv
+
+if is_testing or os.environ.get('USE_SQLITE', '0').lower() in ('1', 'true', 'yes'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': ':memory:' if is_testing else BASE_DIR / 'db.sqlite3',
         }
     }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('POSTGRES_DB', 'dogfood'),
-            'USER': os.environ.get('POSTGRES_USER', 'dogfood_user'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'dogfood_pass'),
-            'HOST': os.environ.get('POSTGRES_HOST', 'db'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+    pg_host = os.environ.get('POSTGRES_HOST', 'db')
+    can_resolve = True
+    try:
+        socket.gethostbyname(pg_host)
+    except socket.error:
+        can_resolve = False
+
+    if can_resolve:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('POSTGRES_DB', 'dogfood'),
+                'USER': os.environ.get('POSTGRES_USER', 'dogfood_user'),
+                'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'dogfood_pass'),
+                'HOST': pg_host,
+                'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+            }
         }
-    }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'events:event_list'
+LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
