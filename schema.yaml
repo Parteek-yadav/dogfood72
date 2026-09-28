@@ -1,0 +1,3042 @@
+openapi: 3.0.3
+info:
+  title: Dogfood 2026 Hackathon API
+  version: 1.0.0
+  description: Dogfood 2026 hackathon submission-and-judging platform API.
+paths:
+  /api/assignments/{assignment_id}/score/:
+    post:
+      operationId: api_assignments_score_create
+      description: |-
+        POST /api/assignments/{assignment_id}/score/
+        Judge evaluates assigned submission on 1-5 scale for each criterion.
+        Enforces judging window and assignment ownership.
+      summary: Submit or save scores for an assigned submission
+      parameters:
+      - in: path
+        name: assignment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreSubmissionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScoreSubmissionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScoreSubmissionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreSubmissionResponse'
+          description: ''
+  /api/events/:
+    get:
+      operationId: api_events_list
+      description: |-
+        GET /api/events/
+        Lists published events (and draft events if the user is an organizer).
+
+        POST /api/events/
+        Creates a new hackathon event. Automatically assigns organizer role to current user.
+      summary: List hackathon events
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventList'
+          description: ''
+    post:
+      operationId: api_events_create
+      description: |-
+        GET /api/events/
+        Lists published events (and draft events if the user is an organizer).
+
+        POST /api/events/
+        Creates a new hackathon event. Automatically assigns organizer role to current user.
+      summary: Create a new hackathon event
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventCreateUpdate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+          description: ''
+  /api/events/{event_id}/assignments/override/:
+    post:
+      operationId: api_events_assignments_override_create
+      description: |-
+        POST /api/events/{event_id}/assignments/override/
+        Manually add or remove a judge assignment with COI validation.
+      summary: Manual judge assignment override
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ManualAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ManualAssignment'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Assignment updated
+  /api/events/{event_id}/assignments/run/:
+    post:
+      operationId: api_events_assignments_run_create
+      description: |-
+        POST /api/events/{event_id}/assignments/run/
+        Executes balanced, conflict-of-interest-free algorithmic judge assignments.
+      summary: Run algorithmic judge assignments with COI prevention
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlgorithmicAssignmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlgorithmicAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlgorithmicAssignmentRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlgorithmicAssignmentResponse'
+          description: ''
+  /api/events/{event_id}/export/assignments/:
+    get:
+      operationId: api_events_export_assignments_retrieve
+      description: |-
+        GET /api/events/{event_id}/export/assignments/
+        Export judge assignments CSV (organizers only).
+      summary: Export judge assignments as CSV
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: CSV export of judge assignments
+  /api/events/{event_id}/export/normalized/:
+    get:
+      operationId: api_events_export_normalized_retrieve
+      description: |-
+        GET /api/events/{event_id}/export/normalized/
+        Export normalized rankings CSV (organizers only).
+      summary: Export normalized rankings as CSV
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: CSV export of normalized rankings
+  /api/events/{event_id}/judge-progress/:
+    get:
+      operationId: api_events_judge_progress_retrieve
+      description: |-
+        GET /api/events/{id}/judge-progress/
+
+        STRICT ISOLATION REQUIREMENT:
+        - Must return 403 Forbidden for non-organizers.
+        - Returns aggregate evaluation progress for organizers/admins.
+      summary: Aggregate evaluation progress across judges (organizers only)
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgeProgressSummary'
+          description: ''
+  /api/events/{event_id}/my-assignments/:
+    get:
+      operationId: api_events_my_assignments_list
+      description: |-
+        GET /api/events/{id}/my-assignments/
+        Allows an authenticated judge to retrieve only their own assignments and scores.
+      summary: List assignments for authenticated judge
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyAssignment'
+          description: ''
+  /api/events/{event_id}/normalize/:
+    post:
+      operationId: api_events_normalize_create
+      description: |-
+        POST /api/events/{event_id}/normalize/
+        Triggers z-score normalization across all judges for an event.
+      summary: Trigger z-score normalization for an event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NormalizationTrigger'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NormalizationTrigger'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NormalizationTrigger'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NormalizationResponse'
+          description: ''
+  /api/events/{event_id}/prizes/:
+    get:
+      operationId: api_events_prizes_list
+      description: |-
+        GET, POST /api/events/{event_id}/prizes/
+        List prizes or add a prize to an event (organizer required for POST).
+      summary: List event prizes
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prize'
+          description: ''
+    post:
+      operationId: api_events_prizes_create
+      description: |-
+        GET, POST /api/events/{event_id}/prizes/
+        List prizes or add a prize to an event (organizer required for POST).
+      summary: Create an event prize
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prize'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Prize'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Prize'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prize'
+          description: ''
+  /api/events/{event_id}/prizes/{id}/:
+    delete:
+      operationId: api_events_prizes_destroy
+      description: |-
+        DELETE /api/events/{event_id}/prizes/{pk}/
+        Delete a prize from an event (organizer required).
+      summary: Delete a prize
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/events/{event_id}/questions/:
+    get:
+      operationId: api_events_questions_list
+      description: |-
+        GET, POST /api/events/{event_id}/questions/
+        List or add organizer-defined custom questions for submission forms.
+      summary: List custom questions for an event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomQuestion'
+          description: ''
+    post:
+      operationId: api_events_questions_create
+      description: |-
+        GET, POST /api/events/{event_id}/questions/
+        List or add organizer-defined custom questions for submission forms.
+      summary: Add custom question to event submission form
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomQuestion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomQuestion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomQuestion'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomQuestion'
+          description: ''
+  /api/events/{event_id}/questions/{id}/:
+    delete:
+      operationId: api_events_questions_destroy
+      description: |-
+        DELETE /api/events/{event_id}/questions/{pk}/
+        Delete a custom question from an event.
+      summary: Delete custom question
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/events/{event_id}/roles/:
+    get:
+      operationId: api_events_roles_list
+      description: |-
+        GET, POST /api/events/{event_id}/roles/
+        List roles or assign a role (organizer, judge, participant) to a user in this event.
+      summary: List roles assigned in this event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventRole'
+          description: ''
+    post:
+      operationId: api_events_roles_create
+      description: |-
+        GET, POST /api/events/{event_id}/roles/
+        List roles or assign a role (organizer, judge, participant) to a user in this event.
+      summary: Assign a role to a user for this event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRoleCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventRoleCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventRoleCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventRole'
+          description: ''
+  /api/events/{event_id}/rubric/:
+    get:
+      operationId: api_events_rubric_retrieve
+      description: |-
+        GET /api/events/{event_id}/rubric/
+        Retrieve rubric and its criteria for an event.
+
+        POST /api/events/{event_id}/rubric/
+        Create or update rubric metadata for an event.
+      summary: Retrieve rubric and criteria for an event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rubric'
+          description: ''
+    post:
+      operationId: api_events_rubric_create
+      description: |-
+        GET /api/events/{event_id}/rubric/
+        Retrieve rubric and its criteria for an event.
+
+        POST /api/events/{event_id}/rubric/
+        Create or update rubric metadata for an event.
+      summary: Create or update event rubric
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RubricCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RubricCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RubricCreateUpdate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rubric'
+          description: ''
+  /api/events/{event_id}/rubric/criteria/:
+    post:
+      operationId: api_events_rubric_criteria_create
+      description: |-
+        POST /api/events/{event_id}/rubric/criteria/
+        Add a new criterion to the event's rubric.
+      summary: Add criterion to event rubric
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RubricCriterion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RubricCriterion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RubricCriterion'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RubricCriterion'
+          description: ''
+  /api/events/{event_id}/rubric/criteria/{id}/:
+    delete:
+      operationId: api_events_rubric_criteria_destroy
+      description: |-
+        DELETE /api/events/{event_id}/rubric/criteria/{pk}/
+        Delete a criterion from the event's rubric.
+      summary: Delete a criterion from event rubric
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/events/{event_id}/submissions/:
+    get:
+      operationId: api_events_submissions_list
+      description: |-
+        GET /api/events/{event_id}/submissions/
+        Public gallery listing submitted projects for an event.
+        Supports filtering by search query (?q=) and challenge track (?track=).
+      summary: List submitted projects for an event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search text for title, tagline, or tech tags
+      - in: query
+        name: track
+        schema:
+          type: integer
+        description: Filter by track ID
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Submission'
+          description: ''
+  /api/events/{event_id}/teams/:
+    get:
+      operationId: api_events_teams_list
+      description: |-
+        GET /api/events/{event_id}/teams/
+        List teams formed in this event.
+
+        POST /api/events/{event_id}/teams/
+        Form a new team for this event. Enforces single-team-per-event constraint.
+      summary: List teams for an event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamDetail'
+          description: ''
+    post:
+      operationId: api_events_teams_create
+      description: |-
+        GET /api/events/{event_id}/teams/
+        List teams formed in this event.
+
+        POST /api/events/{event_id}/teams/
+        Form a new team for this event. Enforces single-team-per-event constraint.
+      summary: Create a new team for an event
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TeamCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TeamCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamDetail'
+          description: ''
+  /api/events/{event_id}/tracks/:
+    get:
+      operationId: api_events_tracks_list
+      description: |-
+        GET, POST /api/events/{event_id}/tracks/
+        List tracks or add a track to an event (organizer required for POST).
+      summary: List event tracks
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Track'
+          description: ''
+    post:
+      operationId: api_events_tracks_create
+      description: |-
+        GET, POST /api/events/{event_id}/tracks/
+        List tracks or add a track to an event (organizer required for POST).
+      summary: Create an event track
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Track'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Track'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Track'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+          description: ''
+  /api/events/{event_id}/tracks/{id}/:
+    delete:
+      operationId: api_events_tracks_destroy
+      description: |-
+        DELETE /api/events/{event_id}/tracks/{pk}/
+        Delete a track from an event (organizer required).
+      summary: Delete a track
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/events/{id}/:
+    get:
+      operationId: api_events_retrieve
+      description: |-
+        GET /api/events/{id}/
+        Retrieve event detail with tracks, prizes, and custom questions.
+
+        PUT/PATCH /api/events/{id}/
+        Update event schedule and details. Organizer permission required.
+
+        DELETE /api/events/{id}/
+        Delete event. Organizer permission required.
+      summary: Retrieve event details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+          description: ''
+    put:
+      operationId: api_events_update
+      description: |-
+        GET /api/events/{id}/
+        Retrieve event detail with tracks, prizes, and custom questions.
+
+        PUT/PATCH /api/events/{id}/
+        Update event schedule and details. Organizer permission required.
+
+        DELETE /api/events/{id}/
+        Delete event. Organizer permission required.
+      summary: Update event details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventCreateUpdate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+          description: ''
+    patch:
+      operationId: api_events_partial_update
+      description: |-
+        GET /api/events/{id}/
+        Retrieve event detail with tracks, prizes, and custom questions.
+
+        PUT/PATCH /api/events/{id}/
+        Update event schedule and details. Organizer permission required.
+
+        DELETE /api/events/{id}/
+        Delete event. Organizer permission required.
+      summary: Partially update event details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEventCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEventCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEventCreateUpdate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+          description: ''
+    delete:
+      operationId: api_events_destroy
+      description: |-
+        GET /api/events/{id}/
+        Retrieve event detail with tracks, prizes, and custom questions.
+
+        PUT/PATCH /api/events/{id}/
+        Update event schedule and details. Organizer permission required.
+
+        DELETE /api/events/{id}/
+        Delete event. Organizer permission required.
+      summary: Delete an event
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/export.csv:
+    get:
+      operationId: api_export.csv_retrieve
+      description: |-
+        GET /api/export.csv
+        Checker endpoint:
+        - as organizer/admin -> 200 with CSV body
+        - as non-organizer -> 401/403
+      summary: Export scoring evaluation CSV (organizer access required)
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: CSV export file content
+  /api/invites/{token}/join/:
+    post:
+      operationId: api_invites_join_create
+      description: |-
+        POST /api/invites/{token}/join/
+        Accept an invitation to join a team via token.
+        Validates expiration, reuse, and single-team-per-event constraint.
+      summary: Join a team using an invite token
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamDetail'
+          description: ''
+  /api/judge/scores:
+    get:
+      operationId: api_judge_scores_list
+      description: |-
+        GET /api/judge/scores
+        Checker endpoint:
+        - as judge_a -> 200 with their own scores
+        - as participant / unauthenticated -> 401/403
+        - as judge_b querying ?judge=judge_a -> 401/403
+      summary: Retrieve scores submitted by authenticated judge
+      parameters:
+      - in: query
+        name: judge
+        schema:
+          type: string
+        description: Judge username (must match requesting judge)
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JudgeScoreItem'
+          description: ''
+  /api/submissions/{id}/:
+    get:
+      operationId: api_submissions_retrieve
+      description: |-
+        GET /api/submissions/{pk}/
+        Retrieve submission details.
+
+        PUT/PATCH /api/submissions/{pk}/
+        Edit submission details and optionally submit.
+        Strictly enforces submission deadline before permitting any changes.
+      summary: Retrieve project submission details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+    put:
+      operationId: api_submissions_update
+      description: |-
+        GET /api/submissions/{pk}/
+        Retrieve submission details.
+
+        PUT/PATCH /api/submissions/{pk}/
+        Edit submission details and optionally submit.
+        Strictly enforces submission deadline before permitting any changes.
+      summary: Update project submission details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmissionUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmissionUpdate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+    patch:
+      operationId: api_submissions_partial_update
+      description: |-
+        GET /api/submissions/{pk}/
+        Retrieve submission details.
+
+        PUT/PATCH /api/submissions/{pk}/
+        Edit submission details and optionally submit.
+        Strictly enforces submission deadline before permitting any changes.
+      summary: Partially update project submission details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSubmissionUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSubmissionUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSubmissionUpdate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+  /api/submissions/{id}/comments/:
+    get:
+      operationId: api_submissions_comments_list
+      description: |-
+        GET /api/submissions/{pk}/comments/
+        List discussion comments on a project submission.
+
+        POST /api/submissions/{pk}/comments/
+        Post a new discussion comment (authenticated user required).
+      summary: List comments for a project submission
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+          description: ''
+    post:
+      operationId: api_submissions_comments_create
+      description: |-
+        GET /api/submissions/{pk}/comments/
+        List discussion comments on a project submission.
+
+        POST /api/submissions/{pk}/comments/
+        Post a new discussion comment (authenticated user required).
+      summary: Post a comment on a project submission
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          description: ''
+  /api/submissions/{id}/gallery/:
+    post:
+      operationId: api_submissions_gallery_create
+      description: |-
+        POST /api/submissions/{pk}/gallery/
+        Upload a gallery screenshot for this submission. Enforces deadline.
+      summary: Upload a screenshot to submission gallery
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmissionImageUpload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmissionImageUpload'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionImage'
+          description: ''
+  /api/submissions/{id}/gallery/{image_id}/:
+    delete:
+      operationId: api_submissions_gallery_destroy
+      description: |-
+        DELETE /api/submissions/{pk}/gallery/{image_id}/
+        Delete a gallery screenshot. Enforces deadline.
+      summary: Delete a screenshot from submission gallery
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/submissions/{id}/vote/:
+    post:
+      operationId: api_submissions_vote_create
+      description: |-
+        POST /api/submissions/{pk}/vote/
+        Cast a public or participant vote on a project submission.
+        Reconciles authenticated user votes with anonymous signed voter tokens.
+        Prevents duplicate votes via dual database constraints.
+      summary: Cast a vote for a project submission
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteCast'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VoteCast'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VoteCast'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vote'
+          description: ''
+  /api/submissions/{id}/votes/:
+    get:
+      operationId: api_submissions_votes_retrieve
+      description: |-
+        GET /api/submissions/{pk}/votes/
+        Retrieve aggregate voting statistics for a submission.
+      summary: Retrieve aggregate vote count and weight for a submission
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteSummary'
+          description: ''
+  /api/submissions/{submission_id}/scores/:
+    get:
+      operationId: api_submissions_scores_list
+      description: |-
+        GET /api/submissions/{id}/scores/
+
+        STRICT ISOLATION REQUIREMENT:
+        - Must return 403 Forbidden for a judge trying to view scores on this submission.
+        - Must return 200 with full visibility ONLY for event organizers and platform administrators.
+      summary: Retrieve all judge scores for a submission (organizers only)
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizerSubmissionScore'
+          description: ''
+  /api/teams/{id}/:
+    get:
+      operationId: api_teams_retrieve
+      description: |-
+        GET /api/teams/{pk}/
+        Retrieve team details and roster.
+      summary: Retrieve team details and roster
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamDetail'
+          description: ''
+  /api/teams/{id}/invites/:
+    post:
+      operationId: api_teams_invites_create
+      description: |-
+        POST /api/teams/{pk}/invites/
+        Generate a shareable, expiring invite token. Only team members can create invites.
+      summary: Create an invitation token for a team
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteCreate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+          description: ''
+  /api/teams/{id}/members/{user_id}/:
+    delete:
+      operationId: api_teams_members_destroy
+      description: |-
+        DELETE /api/teams/{pk}/members/{user_id}/
+        Remove a member from the team. Only the team leader or the user themselves may execute this.
+      summary: Remove a member from the team
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/teams/{team_id}/submissions/:
+    post:
+      operationId: api_teams_submissions_create
+      description: |-
+        POST /api/teams/{team_id}/submissions/
+        Create initial draft project submission for a team.
+        Checks:
+        - User is team member
+        - Submission deadline has not passed
+        - Team does not already have an active submission
+      summary: Create initial draft submission for a team
+      parameters:
+      - in: path
+        name: team_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+  /judging/api/events/{event_id}/judge-progress/:
+    get:
+      operationId: judging_api_events_judge_progress_retrieve
+      description: |-
+        GET /api/events/{id}/judge-progress/
+
+        STRICT ISOLATION REQUIREMENT:
+        - Must return 403 Forbidden for non-organizers.
+        - Returns aggregate evaluation progress for organizers/admins.
+      summary: Aggregate evaluation progress across judges (organizers only)
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - judging
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgeProgressSummary'
+          description: ''
+  /judging/api/events/{event_id}/my-assignments/:
+    get:
+      operationId: judging_api_events_my_assignments_list
+      description: |-
+        GET /api/events/{id}/my-assignments/
+        Allows an authenticated judge to retrieve only their own assignments and scores.
+      summary: List assignments for authenticated judge
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - judging
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyAssignment'
+          description: ''
+  /judging/api/submissions/{submission_id}/scores/:
+    get:
+      operationId: judging_api_submissions_scores_list
+      description: |-
+        GET /api/submissions/{id}/scores/
+
+        STRICT ISOLATION REQUIREMENT:
+        - Must return 403 Forbidden for a judge trying to view scores on this submission.
+        - Must return 200 with full visibility ONLY for event organizers and platform administrators.
+      summary: Retrieve all judge scores for a submission (organizers only)
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - judging
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizerSubmissionScore'
+          description: ''
+components:
+  schemas:
+    AlgorithmicAssignmentRequest:
+      type: object
+      properties:
+        k:
+          type: integer
+          maximum: 20
+          minimum: 1
+          default: 3
+          description: Number of judges per submission
+    AlgorithmicAssignmentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        assignments_generated:
+          type: integer
+        k:
+          type: integer
+      required:
+      - assignments_generated
+      - k
+      - status
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        submission:
+          type: integer
+        user:
+          type: integer
+        username:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          description: Comment text
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - created_at
+      - id
+      - submission
+      - updated_at
+      - user
+      - username
+    CommentCreate:
+      type: object
+      properties:
+        body:
+          type: string
+          description: Comment text
+      required:
+      - body
+    CustomQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        label:
+          type: string
+          description: The prompt or label displayed to the participant
+          maxLength: 255
+        field_type:
+          allOf:
+          - $ref: '#/components/schemas/FieldTypeEnum'
+          description: |-
+            Input control type
+
+            * `text` - Single-line Text
+            * `textarea` - Multi-line Text (Textarea)
+            * `url` - URL
+            * `select` - Select Dropdown
+            * `checkbox` - Checkbox (Boolean)
+        required:
+          type: boolean
+          description: Whether this question must be answered upon final submission
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Display order sequence within the submission form
+        choices:
+          description: List of choices for 'select' field type, e.g. ["Option A",
+            "Option B"]
+      required:
+      - id
+      - label
+    EventCreateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Event title
+          maxLength: 255
+        slug:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Full markdown/text description of the event
+        start_date:
+          type: string
+          format: date-time
+          description: Event start timestamp
+        end_date:
+          type: string
+          format: date-time
+          description: Event conclusion timestamp
+        submission_deadline:
+          type: string
+          format: date-time
+          description: Deadline for submission submissions and edits
+        voting_start:
+          type: string
+          format: date-time
+          description: Start of community/judge voting period
+        voting_end:
+          type: string
+          format: date-time
+          description: End of community/judge voting period
+        is_published:
+          type: boolean
+          description: Whether event is visible to public
+      required:
+      - description
+      - end_date
+      - name
+      - start_date
+      - submission_deadline
+      - voting_end
+      - voting_start
+    EventDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Event title
+          maxLength: 255
+        slug:
+          type: string
+          description: Unique URL slug
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Full markdown/text description of the event
+        start_date:
+          type: string
+          format: date-time
+          description: Event start timestamp
+        end_date:
+          type: string
+          format: date-time
+          description: Event conclusion timestamp
+        submission_deadline:
+          type: string
+          format: date-time
+          description: Deadline for submission submissions and edits
+        voting_start:
+          type: string
+          format: date-time
+          description: Start of community/judge voting period
+        voting_end:
+          type: string
+          format: date-time
+          description: End of community/judge voting period
+        is_published:
+          type: boolean
+          description: Whether event is visible to public
+        organizer:
+          type: integer
+          description: Primary event creator / lead organizer
+        organizer_username:
+          type: string
+          readOnly: true
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+          readOnly: true
+        prizes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prize'
+          readOnly: true
+        custom_questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomQuestion'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - custom_questions
+      - description
+      - end_date
+      - id
+      - name
+      - organizer
+      - organizer_username
+      - prizes
+      - slug
+      - start_date
+      - submission_deadline
+      - tracks
+      - updated_at
+      - voting_end
+      - voting_start
+    EventList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Event title
+          maxLength: 255
+        slug:
+          type: string
+          description: Unique URL slug
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Full markdown/text description of the event
+        start_date:
+          type: string
+          format: date-time
+          description: Event start timestamp
+        end_date:
+          type: string
+          format: date-time
+          description: Event conclusion timestamp
+        submission_deadline:
+          type: string
+          format: date-time
+          description: Deadline for submission submissions and edits
+        voting_start:
+          type: string
+          format: date-time
+          description: Start of community/judge voting period
+        voting_end:
+          type: string
+          format: date-time
+          description: End of community/judge voting period
+        is_published:
+          type: boolean
+          description: Whether event is visible to public
+        organizer_username:
+          type: string
+          readOnly: true
+        tracks_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - end_date
+      - id
+      - name
+      - organizer_username
+      - slug
+      - start_date
+      - submission_deadline
+      - tracks_count
+      - voting_end
+      - voting_start
+    EventRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        username:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          readOnly: true
+        role:
+          $ref: '#/components/schemas/EventRoleChoiceEnum'
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assigned_at
+      - email
+      - id
+      - role
+      - user
+      - username
+    EventRoleChoiceEnum:
+      enum:
+      - organizer
+      - judge
+      - participant
+      type: string
+      description: |-
+        * `organizer` - Organizer
+        * `judge` - Judge
+        * `participant` - Participant
+    EventRoleCreate:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          description: ID of User to assign role to
+        role:
+          allOf:
+          - $ref: '#/components/schemas/EventRoleChoiceEnum'
+          description: |-
+            Role: organizer, judge, participant
+
+            * `organizer` - Organizer
+            * `judge` - Judge
+            * `participant` - Participant
+      required:
+      - role
+      - user_id
+    FieldTypeEnum:
+      enum:
+      - text
+      - textarea
+      - url
+      - select
+      - checkbox
+      type: string
+      description: |-
+        * `text` - Single-line Text
+        * `textarea` - Multi-line Text (Textarea)
+        * `url` - URL
+        * `select` - Select Dropdown
+        * `checkbox` - Checkbox (Boolean)
+    Invite:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        token:
+          type: string
+          description: Cryptographically secure URL-safe invite token
+          maxLength: 64
+        email:
+          nullable: true
+          description: Optional target email address for email-gated invites
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 255
+          - type: string
+            maxLength: 0
+        expires_at:
+          type: string
+          format: date-time
+          description: Timestamp when the invite becomes invalid
+        used_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when this invite was accepted and used
+        is_expired:
+          type: boolean
+          readOnly: true
+        created_by_username:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by_username
+      - expires_at
+      - id
+      - is_expired
+    InviteCreate:
+      type: object
+      properties:
+        email:
+          nullable: true
+          description: Optional target email to restrict invite
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        expires_in_days:
+          type: integer
+          maximum: 30
+          minimum: 1
+          default: 7
+          description: Days until invite expires
+    JudgeAssignmentStatusChoiceEnum:
+      enum:
+      - assigned
+      - in_progress
+      - completed
+      type: string
+      description: |-
+        * `assigned` - Assigned
+        * `in_progress` - In Progress
+        * `completed` - Completed
+    JudgeProgressItem:
+      type: object
+      properties:
+        judge_id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        assigned_count:
+          type: integer
+        completed_count:
+          type: integer
+        in_progress_count:
+          type: integer
+        unstarted_count:
+          type: integer
+        last_activity:
+          type: string
+          nullable: true
+      required:
+      - assigned_count
+      - completed_count
+      - email
+      - in_progress_count
+      - judge_id
+      - last_activity
+      - unstarted_count
+      - username
+    JudgeProgressSummary:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        event_name:
+          type: string
+        total_judges:
+          type: integer
+        total_assignments:
+          type: integer
+        completed_assignments:
+          type: integer
+        progress_percent:
+          type: number
+          format: double
+        judges:
+          type: array
+          items:
+            $ref: '#/components/schemas/JudgeProgressItem'
+      required:
+      - completed_assignments
+      - event_id
+      - event_name
+      - judges
+      - progress_percent
+      - total_assignments
+      - total_judges
+    JudgeScoreItem:
+      type: object
+      properties:
+        submission_id:
+          type: integer
+        submission_title:
+          type: string
+        criterion:
+          type: string
+        value:
+          type: integer
+        feedback:
+          type: string
+      required:
+      - criterion
+      - feedback
+      - submission_id
+      - submission_title
+      - value
+    ManualAssignment:
+      type: object
+      properties:
+        action:
+          allOf:
+          - $ref: '#/components/schemas/ManualAssignmentActionEnum'
+          description: |-
+            Action to execute
+
+            * `add` - add
+            * `delete` - delete
+        judge_id:
+          type: integer
+          nullable: true
+        submission_id:
+          type: integer
+          nullable: true
+        assignment_id:
+          type: integer
+          nullable: true
+      required:
+      - action
+    ManualAssignmentActionEnum:
+      enum:
+      - add
+      - delete
+      type: string
+      description: |-
+        * `add` - add
+        * `delete` - delete
+    MyAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        submission:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionBrief'
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/JudgeAssignmentStatusChoiceEnum'
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        my_scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Score'
+          readOnly: true
+      required:
+      - assigned_at
+      - id
+      - my_scores
+      - submission
+    NormalizationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        submission_count:
+          type: integer
+        judge_count:
+          type: integer
+      required:
+      - status
+    NormalizationTrigger:
+      type: object
+      properties:
+        method:
+          type: string
+          default: zscore
+          description: 'Normalization algorithm (default: ''zscore'')'
+    OrganizerSubmissionScore:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        judge_id:
+          type: integer
+          readOnly: true
+        judge_username:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/JudgeAssignmentStatusChoiceEnum'
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Score'
+          readOnly: true
+      required:
+      - assigned_at
+      - id
+      - judge_id
+      - judge_username
+      - scores
+    PatchedEventCreateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Event title
+          maxLength: 255
+        slug:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          description: Full markdown/text description of the event
+        start_date:
+          type: string
+          format: date-time
+          description: Event start timestamp
+        end_date:
+          type: string
+          format: date-time
+          description: Event conclusion timestamp
+        submission_deadline:
+          type: string
+          format: date-time
+          description: Deadline for submission submissions and edits
+        voting_start:
+          type: string
+          format: date-time
+          description: Start of community/judge voting period
+        voting_end:
+          type: string
+          format: date-time
+          description: End of community/judge voting period
+        is_published:
+          type: boolean
+          description: Whether event is visible to public
+    PatchedSubmissionUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Project title
+          maxLength: 255
+        tagline:
+          type: string
+          description: One-line elevator pitch
+          maxLength: 255
+        description:
+          type: string
+          description: Full project description and markdown writeup
+        track:
+          type: integer
+          nullable: true
+          description: Track entered by this submission
+        repo_url:
+          description: Source code repository (e.g. GitHub/GitLab)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        live_url:
+          description: Live running deployment URL
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        demo_video_url:
+          description: Demo video URL (e.g. YouTube, Vimeo, Loom)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        tech_tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+        custom_answers:
+          type: object
+          additionalProperties: {}
+        action:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionUpdateActionEnum'
+          default: save_draft
+          description: |-
+            Action: 'save_draft' to save in-progress draft, 'submit_final' to submit for judging
+
+            * `save_draft` - save_draft
+            * `submit_final` - submit_final
+    Prize:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Prize title (e.g. '1st Place Overall')
+          maxLength: 255
+        track:
+          type: integer
+          nullable: true
+          description: Optional track restriction for this prize
+        track_name:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          description: Cash value or prize description (e.g. '$5,000')
+          maxLength: 255
+        description:
+          type: string
+          description: Details on eligibility and prize perks
+        rank:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Prize ranking order (e.g. 1 for 1st, 2 for 2nd)
+      required:
+      - id
+      - name
+      - track_name
+    Rubric:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          type: integer
+        name:
+          type: string
+          description: Rubric title (e.g. 'General Technical Rubric')
+          maxLength: 255
+        description:
+          type: string
+          description: Guidelines and evaluation instructions for judges
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/RubricCriterion'
+          readOnly: true
+        total_weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - criteria
+      - event
+      - id
+      - name
+      - total_weight
+    RubricCreateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Rubric title (e.g. 'General Technical Rubric')
+          maxLength: 255
+        description:
+          type: string
+          description: Guidelines and evaluation instructions for judges
+      required:
+      - name
+    RubricCriterion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Criterion name (e.g. 'Technical Execution')
+          maxLength: 255
+        description:
+          type: string
+          description: Scoring guide for 1-5 scale
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Weight percentage (e.g. 25.00 for 25%). Rubric total should
+            sum to 100.00.
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Display order in judging form
+      required:
+      - id
+      - name
+    Score:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        criterion:
+          type: integer
+        criterion_name:
+          type: string
+          readOnly: true
+        value:
+          type: integer
+          maximum: 5
+          minimum: 1
+          description: Score value between 1 and 5 (inclusive)
+        feedback:
+          type: string
+          description: Optional feedback note from the judge for this criterion
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - criterion
+      - criterion_name
+      - id
+      - updated_at
+      - value
+    ScoreInputItem:
+      type: object
+      properties:
+        criterion_id:
+          type: integer
+          description: ID of RubricCriterion
+        value:
+          type: integer
+          maximum: 5
+          minimum: 1
+          description: Integer score between 1 and 5
+        feedback:
+          type: string
+          default: ''
+          description: Optional feedback note
+      required:
+      - criterion_id
+      - value
+    ScoreSubmissionRequest:
+      type: object
+      properties:
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreInputItem'
+          description: List of criterion score evaluations
+      required:
+      - scores
+    ScoreSubmissionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        assignment_status:
+          type: string
+        scores_saved:
+          type: integer
+      required:
+      - assignment_status
+      - scores_saved
+      - status
+    Submission:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        team:
+          type: integer
+          description: Team authoring this project
+        team_name:
+          type: string
+          readOnly: true
+        event:
+          type: integer
+        event_name:
+          type: string
+          readOnly: true
+        track:
+          type: integer
+          nullable: true
+          description: Track entered by this submission
+        track_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          description: Project title
+          maxLength: 255
+        tagline:
+          type: string
+          description: One-line elevator pitch
+          maxLength: 255
+        description:
+          type: string
+          description: Full project description and markdown writeup
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+          description: Cover/card thumbnail image for the submission
+        repo_url:
+          description: Source code repository (e.g. GitHub/GitLab)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        live_url:
+          description: Live running deployment URL
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        demo_video_url:
+          description: Demo video URL (e.g. YouTube, Vimeo, Loom)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        tech_tags:
+          description: List of technologies / stacks used (e.g. ["Python", "Django",
+            "PostgreSQL"])
+        custom_answers:
+          description: Organizer-defined custom question answers keyed by str(CustomQuestion.id)
+        status:
+          $ref: '#/components/schemas/SubmissionStatusChoiceEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when project was officially submitted
+        gallery_images:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionImage'
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - event
+      - event_name
+      - gallery_images
+      - id
+      - team
+      - team_name
+      - title
+      - track_name
+      - updated_at
+    SubmissionBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          description: Project title
+          maxLength: 255
+        tagline:
+          type: string
+          description: One-line elevator pitch
+          maxLength: 255
+        repo_url:
+          description: Source code repository (e.g. GitHub/GitLab)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        live_url:
+          description: Live running deployment URL
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        demo_video_url:
+          description: Demo video URL (e.g. YouTube, Vimeo, Loom)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        team_name:
+          type: string
+          readOnly: true
+        track_name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - team_name
+      - title
+      - track_name
+    SubmissionCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Project title
+          maxLength: 255
+        tagline:
+          type: string
+          description: One-line elevator pitch
+          maxLength: 255
+        description:
+          type: string
+          description: Full project description and markdown writeup
+        track:
+          type: integer
+          nullable: true
+          description: Track entered by this submission
+        repo_url:
+          description: Source code repository (e.g. GitHub/GitLab)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        live_url:
+          description: Live running deployment URL
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        demo_video_url:
+          description: Demo video URL (e.g. YouTube, Vimeo, Loom)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        tech_tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          description: List of tech tags, e.g. ["Python", "React"]
+        custom_answers:
+          type: object
+          additionalProperties: {}
+          description: Custom question answers keyed by str(question_id)
+      required:
+      - description
+      - title
+    SubmissionImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+          description: Project gallery screenshot or diagram
+        caption:
+          type: string
+          description: Optional descriptive caption for this screenshot
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Display order in gallery view
+      required:
+      - id
+      - image
+    SubmissionImageUpload:
+      type: object
+      properties:
+        image:
+          type: string
+          format: uri
+          description: Project gallery screenshot or diagram
+        caption:
+          type: string
+          description: Optional descriptive caption for this screenshot
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Display order in gallery view
+      required:
+      - image
+    SubmissionStatusChoiceEnum:
+      enum:
+      - draft
+      - submitted
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Submitted
+    SubmissionUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Project title
+          maxLength: 255
+        tagline:
+          type: string
+          description: One-line elevator pitch
+          maxLength: 255
+        description:
+          type: string
+          description: Full project description and markdown writeup
+        track:
+          type: integer
+          nullable: true
+          description: Track entered by this submission
+        repo_url:
+          description: Source code repository (e.g. GitHub/GitLab)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        live_url:
+          description: Live running deployment URL
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        demo_video_url:
+          description: Demo video URL (e.g. YouTube, Vimeo, Loom)
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        tech_tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+        custom_answers:
+          type: object
+          additionalProperties: {}
+        action:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionUpdateActionEnum'
+          default: save_draft
+          description: |-
+            Action: 'save_draft' to save in-progress draft, 'submit_final' to submit for judging
+
+            * `save_draft` - save_draft
+            * `submit_final` - submit_final
+      required:
+      - description
+      - title
+    SubmissionUpdateActionEnum:
+      enum:
+      - save_draft
+      - submit_final
+      type: string
+      description: |-
+        * `save_draft` - save_draft
+        * `submit_final` - submit_final
+    TeamCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Team name
+          maxLength: 255
+      required:
+      - name
+    TeamDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          type: integer
+        event_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          description: Team name
+          maxLength: 255
+        created_by:
+          type: integer
+          description: User who originally formed the team
+        created_by_username:
+          type: string
+          readOnly: true
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMembership'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - created_by_username
+      - event
+      - event_name
+      - id
+      - memberships
+      - name
+      - updated_at
+    TeamMembership:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          readOnly: true
+        role:
+          $ref: '#/components/schemas/TeamMembershipRoleChoiceEnum'
+        joined_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - email
+      - id
+      - joined_at
+      - user_id
+      - username
+    TeamMembershipRoleChoiceEnum:
+      enum:
+      - leader
+      - member
+      type: string
+      description: |-
+        * `leader` - Team Leader
+        * `member` - Team Member
+    Track:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Track name
+          maxLength: 255
+        description:
+          type: string
+          description: Description and criteria for this track
+      required:
+      - id
+      - name
+    Vote:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        submission:
+          type: integer
+        user:
+          type: integer
+          nullable: true
+          description: Authenticated user casting this vote (null for anonymous link
+            votes)
+        username:
+          type: string
+          readOnly: true
+        voter_token:
+          type: string
+          nullable: true
+          description: Cryptographically signed browser token for anonymous voting
+            duplicate prevention
+          maxLength: 64
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          description: Vote credit weight (default 1.00; allows quadratic voting calculations)
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - submission
+      - username
+    VoteCast:
+      type: object
+      properties:
+        voter_token:
+          type: string
+          nullable: true
+          description: Signed browser token for anonymous voter reconciliation (omitted
+            if user is authenticated)
+          maxLength: 64
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          default: '1.00'
+          description: Vote credit weight (default 1.00; allows quadratic voting calculations)
+    VoteSummary:
+      type: object
+      properties:
+        submission_id:
+          type: integer
+        total_votes:
+          type: integer
+        total_weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+      - submission_id
+      - total_votes
+      - total_weight
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

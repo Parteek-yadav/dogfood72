@@ -189,4 +189,10 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Dogfood 2026 hackathon submission-and-judging platform API.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'ENUM_NAME_OVERRIDES': {
+        'EventRoleChoiceEnum': 'events.models.EventRole.Role',
+        'TeamMembershipRoleChoiceEnum': 'teams.models.TeamMembership.Role',
+        'SubmissionStatusChoiceEnum': 'submissions.models.Submission.Status',
+        'JudgeAssignmentStatusChoiceEnum': 'judging.models.JudgeAssignment.Status',
+    },
 }

@@ -120,11 +120,11 @@ All passwords are set to `password123` (Admin: `admin123`).
 ## Testing & Verification Commands
 
 ### Automated Test Suite
-Run the 24 Django unit and integration tests inside the web container:
+Run the 31 Django unit and integration tests inside the web container:
 ```bash
 docker compose exec web python manage.py test
 ```
-*Result: 24 tests passed (0 failures, 0 errors).*
+*Result: 31 tests passed (0 failures, 0 errors).*
 
 ### Score Normalization Tool
 Run z-score normalization on event `evt_01` and view before/after rankings:
