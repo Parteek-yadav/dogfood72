@@ -13,9 +13,19 @@ from drf_spectacular.views import (
 )
 
 from judging import api as judging_api
+from submissions import views as submissions_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Acceptance Checker Routes
+    path('projects', submissions_views.projects_list, name='checker_projects'),
+    path('projects/', submissions_views.projects_list, name='checker_projects_slash'),
+    path('projects/new', submissions_views.projects_new, name='checker_projects_new'),
+    path('projects/new/', submissions_views.projects_new, name='checker_projects_new_slash'),
+    path('api/judge/scores', judging_api.JudgeScoresAPIView.as_view(), name='api_judge_scores'),
+    path('api/judge/scores/', judging_api.JudgeScoresAPIView.as_view(), name='api_judge_scores_slash'),
+    path('api/export.csv', judging_api.ExportCSVAPIView.as_view(), name='api_export_csv'),
 
     # Web Applications
     path('auth/', include('accounts.urls', namespace='accounts')),

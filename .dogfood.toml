@@ -1,0 +1,19 @@
+# Official DOGFOOD 2026 Acceptance Checker Configuration
+
+base_url = "http://localhost:8000"
+
+[metadata]
+pitch = "A unified offline-first hackathon submission and evaluation platform with balanced judge assignments, strict role isolation, and z-score score normalization."
+claimed_tiers = ["T1", "T2"]
+
+[auth.headers]
+organizer = "Cookie: sessionid=session_organizer_key"
+judge_a = "Cookie: sessionid=session_judge_a_key"
+judge_b = "Cookie: sessionid=session_judge_b_key"
+participant = "Cookie: sessionid=session_participant_key"
+
+[routes]
+projects = "/projects"
+projects_new = "/projects/new"
+judge_scores = "/api/judge/scores"
+export_csv = "/api/export.csv"

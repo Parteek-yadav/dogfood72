@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
+from django.contrib.auth.models import User
 
 from core.permissions import event_organizer_required, is_event_organizer, is_event_judge
 from core.models import AuditLogEntry
@@ -95,7 +96,7 @@ def assignment_manage(request, event_id):
     submissions = Submission.objects.filter(event=event, status=Submission.Status.SUBMITTED)
 
     manual_form = JudgeAssignmentForm()
-    manual_form.fields['judge'].queryset = [jr.user for jr in judges]
+    manual_form.fields['judge'].queryset = User.objects.filter(id__in=judges.values_list('user_id', flat=True))
     manual_form.fields['submission'].queryset = submissions
 
     return render(request, 'judging/assignment_manage.html', {
@@ -196,9 +197,10 @@ def score_submission(request, assignment_id):
         messages.error(request, "The rubric has no criteria configured.")
         return redirect('judging:my_assignments')
 
-    # Enforce judging window
+    # Enforce judging window (closes at voting_end, representing the evaluation window conclusion, or end_date)
     now = timezone.now()
-    is_window_closed = (event.voting_end and now > event.voting_end)
+    judging_deadline = event.voting_end or event.end_date
+    is_window_closed = (judging_deadline and now > judging_deadline)
 
     # Fetch existing scores
     existing_scores = {s.criterion_id: {'value': s.value, 'feedback': s.feedback} for s in assignment.scores.all()}

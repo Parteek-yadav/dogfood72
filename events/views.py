@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied
 
 from core.permissions import event_organizer_required, is_event_organizer, is_event_participant
@@ -22,11 +23,9 @@ def event_list(request):
     if request.user.is_authenticated:
         # Show published events OR events organized by this user
         events = Event.objects.filter(
-            models_Q_filter := (
-                Event.objects.filter(is_published=True) |
-                Event.objects.filter(organizer=request.user) |
-                Event.objects.filter(roles__user=request.user, roles__role=EventRole.Role.ORGANIZER)
-            ).query
+            Q(is_published=True) |
+            Q(organizer=request.user) |
+            Q(roles__user=request.user, roles__role=EventRole.Role.ORGANIZER)
         ).distinct()
     else:
         events = Event.objects.filter(is_published=True)

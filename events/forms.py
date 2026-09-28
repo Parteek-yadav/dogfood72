@@ -16,14 +16,14 @@ class EventForm(forms.ModelForm):
             'voting_start', 'voting_end', 'is_published'
         ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500'}),
-            'slug': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500', 'placeholder': 'unique-event-slug'}),
-            'description': forms.Textarea(attrs={'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500', 'rows': 5}),
-            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border rounded-lg'}),
-            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border rounded-lg'}),
-            'submission_deadline': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border rounded-lg'}),
-            'voting_start': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border rounded-lg'}),
-            'voting_end': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border rounded-lg'}),
+            'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-black font-medium'}),
+            'slug': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-black font-medium', 'placeholder': 'unique-event-slug'}),
+            'description': forms.Textarea(attrs={'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-black font-medium', 'rows': 5}),
+            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-black font-medium'}),
+            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-black font-medium'}),
+            'submission_deadline': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-black font-medium'}),
+            'voting_start': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-black font-medium'}),
+            'voting_end': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-black font-medium'}),
             'is_published': forms.CheckboxInput(attrs={'class': 'h-5 w-5 text-indigo-600 rounded'}),
         }
 

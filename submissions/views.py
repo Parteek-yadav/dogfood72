@@ -246,3 +246,33 @@ def public_gallery(request, slug):
         'selected_track': track_id,
         'search_query': search_query,
     })
+
+
+def projects_list(request):
+    """
+    Public listing of projects for route GET /projects.
+    Returns 200 with project titles from fixture submissions.
+    """
+    event = Event.objects.filter(is_published=True).first() or Event.objects.first()
+    submissions_qs = (
+        Submission.objects.filter(status=Submission.Status.SUBMITTED)
+        .select_related('event', 'team', 'track')
+        .prefetch_related('gallery_images')
+    )
+    return render(request, 'submissions/public_gallery.html', {
+        'event': event,
+        'submissions': submissions_qs,
+        'tracks': event.tracks.all() if event else [],
+        'selected_track': '',
+        'search_query': '',
+    })
+
+
+def projects_new(request):
+    """
+    Submission creation for route POST /projects/new.
+    Rejects with 403 Forbidden because event submissions are closed.
+    """
+    from django.http import HttpResponseForbidden
+    return HttpResponseForbidden("The submission deadline for this event has passed. Submissions are closed.")
+

@@ -32,6 +32,43 @@
   </script>
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  <style>
+    input, textarea, select {
+      color: #000000 !important;
+      background-color: #ffffff !important;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #64748b !important;
+    }
+    input[type="datetime-local"],
+    input[type="date"],
+    input[type="time"] {
+      color: #000000 !important;
+      background-color: #ffffff !important;
+      font-weight: 600 !important;
+      color-scheme: light !important;
+    }
+    input[type="datetime-local"]::-webkit-datetime-edit,
+    input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper,
+    input[type="datetime-local"]::-webkit-datetime-edit-text,
+    input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+    input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+    input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+    input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
+    input[type="datetime-local"]::-webkit-datetime-edit-minute-field,
+    input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
+      color: #000000 !important;
+      font-weight: 600 !important;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      filter: invert(0) !important;
+      opacity: 0.85;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+    }
+  </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body class="flex flex-col min-h-screen font-sans selection:bg-indigo-500 selection:text-white antialiased">

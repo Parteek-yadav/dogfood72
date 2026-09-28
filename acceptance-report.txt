@@ -1,0 +1,16 @@
+======================================================================
+       OFFICIAL DOGFOOD 2026 ACCEPTANCE CHECKER REPORT
+======================================================================
+Target Portal Base URL : http://localhost:8000
+Claimed Tiers          : T1 T2
+----------------------------------------------------------------------
+[PASS] GET /projects (public, 200, contains fixture project) :: status=200, fixture_title_found=True
+[PASS] POST /projects/new (as participant -> 4xx closed event) :: status=403
+[PASS] GET /api/judge/scores (as judge_a -> 200) :: status=200
+[PASS] GET /api/judge/scores (as participant -> 401/403) :: status=403
+[PASS] GET /api/judge/scores?judge=judge_a (as judge_b -> 401/403) :: status=403
+[PASS] GET /api/export.csv (as organizer -> 200 CSV body) :: status=200, csv_body=True
+[PASS] GET /api/export.csv (as participant -> 401/403) :: status=403
+----------------------------------------------------------------------
+SUMMARY: claimed T1 T2, verified T1 T2
+======================================================================

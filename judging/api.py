@@ -145,3 +145,87 @@ class JudgeProgressAPIView(APIView):
             'progress_percent': overall_percent,
             'judges': judge_data
         }, status=status.HTTP_200_OK)
+
+
+class JudgeScoresAPIView(APIView):
+    """
+    GET /api/judge/scores
+    Checker endpoint:
+    - as judge_a -> 200 with their own scores
+    - as participant / unauthenticated -> 401/403
+    - as judge_b querying ?judge=judge_a -> 401/403
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Must be assigned as a judge in at least one event
+        is_judge = EventRole.objects.filter(user=user, role=EventRole.Role.JUDGE).exists()
+        if not is_judge and not user.is_staff:
+            raise exceptions.PermissionDenied("Access denied: You are not registered as a judge.")
+
+        # If ?judge= query param is provided, must match request.user
+        target_judge = request.query_params.get('judge')
+        if target_judge and target_judge != user.username:
+            raise exceptions.PermissionDenied("Access denied: Judges can only view their own scores.")
+
+        scores = (
+            Score.objects.filter(assignment__judge=user)
+            .select_related('assignment__submission', 'criterion')
+            .order_by('-created_at')
+        )
+
+        data = [
+            {
+                'submission_id': s.assignment.submission_id,
+                'submission_title': s.assignment.submission.title,
+                'criterion': s.criterion.name,
+                'value': s.value,
+                'feedback': s.feedback,
+            }
+            for s in scores
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class ExportCSVAPIView(APIView):
+    """
+    GET /api/export.csv
+    Checker endpoint:
+    - as organizer/admin -> 200 with CSV body
+    - as non-organizer -> 401/403
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        is_organizer = (
+            user.is_staff or
+            user.is_superuser or
+            EventRole.objects.filter(user=user, role=EventRole.Role.ORGANIZER).exists()
+        )
+        if not is_organizer:
+            raise exceptions.PermissionDenied("Access denied: Organizer or admin access required for export.")
+
+        import csv
+        from django.http import HttpResponse
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['event_slug', 'submission_id', 'submission_title', 'team_name', 'judge_username', 'criterion', 'score', 'feedback'])
+
+        for sc in Score.objects.select_related('assignment__event', 'assignment__submission__team', 'assignment__judge', 'criterion').all():
+            writer.writerow([
+                sc.assignment.event.slug,
+                sc.assignment.submission.id,
+                sc.assignment.submission.title,
+                sc.assignment.submission.team.name,
+                sc.assignment.judge.username,
+                sc.criterion.name,
+                sc.value,
+                sc.feedback
+            ])
+
+        return response
+
